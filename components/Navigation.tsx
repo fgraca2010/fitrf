@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const tabs = [
-  { href: '/dashboard', label: 'Início', icon: '🏠' },
-  { href: '/diario', label: 'Diário', icon: '📋' },
-  { href: '/alimentos', label: 'Alimentos', icon: '🥗' },
-  { href: '/marmitas', label: 'Marmitas', icon: '🍱' },
-  { href: '/planejador', label: 'Planejador', icon: '📅' },
+  { href: '/dashboard',   label: 'Início',      icon: '🏠' },
+  { href: '/diario',      label: 'Diário',       icon: '📋' },
+  { href: '/marmitas',    label: 'Marmitas',     icon: '🍱' },
+  { href: '/atividades',  label: 'Atividades',   icon: '🏃' },
+  { href: '/planejador',  label: 'Planejador',   icon: '📅' },
 ]
 
 export default function Navigation() {
@@ -23,12 +23,12 @@ export default function Navigation() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors ${
+              className={`flex-1 flex flex-col items-center py-2 transition-colors ${
                 active ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <span className="text-xl leading-tight">{tab.icon}</span>
-              <span className={`mt-0.5 font-medium ${active ? 'text-emerald-600' : ''}`}>
+              <span className={`mt-0.5 font-medium text-[10px] ${active ? 'text-emerald-600' : ''}`}>
                 {tab.label}
               </span>
             </Link>

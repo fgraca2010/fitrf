@@ -27,6 +27,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
   const [pendingFriends, setPendingFriends] = useState(0)
+  const [activityBurn, setActivityBurn] = useState(0)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -46,6 +48,7 @@ export default function DashboardPage() {
     if (prof) {
       setProfile(prof)
       setUserName(prof.name)
+      if (prof.avatar_url) setAvatarUrl(prof.avatar_url)
     }
 
     // Solicitações de amizade pendentes recebidas
@@ -82,6 +85,14 @@ export default function DashboardPage() {
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     )
     setTotals(t)
+
+    const { data: actLogs } = await supabase
+      .from('activity_logs')
+      .select('calories')
+      .eq('user_id', user.id)
+      .eq('date', dateStr)
+    setActivityBurn((actLogs || []).reduce((s: number, a: { calories: number }) => s + a.calories, 0))
+
     setLoading(false)
   }, [router])
 
@@ -101,9 +112,16 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-800">🥗 FitRF</h1>
-            {userName && <p className="text-xs text-gray-400">Olá, {userName}!</p>}
+          <div className="flex items-center gap-2">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <span className="text-2xl">🥗</span>
+            )}
+            <div>
+              <h1 className="text-base font-bold text-gray-800">FitRF</h1>
+              {userName && <p className="text-xs text-gray-400">Olá, {userName}!</p>}
+            </div>
           </div>
           <div className="flex gap-2 items-center">
             <Link href="/amigos" className="relative text-xs text-gray-500 hover:text-emerald-600 px-2 py-1">
@@ -166,6 +184,12 @@ export default function DashboardPage() {
                 carbsGoal={profile.carbs_goal}
                 fatGoal={profile.fat_goal}
               />
+              {activityBurn > 0 && (
+                <div className="w-full flex items-center justify-between bg-orange-50 rounded-xl px-4 py-2">
+                  <span className="text-sm text-gray-600">🏃 Gasto com atividades</span>
+                  <span className="font-bold text-orange-600">−{activityBurn} kcal</span>
+                </div>
+              )}
             </div>
           </div>
         )}

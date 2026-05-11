@@ -13,6 +13,8 @@ import {
 
 type Section = 'dados' | 'metas' | 'tmb' | 'amigos' | 'exportar' | 'excluir'
 
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024 // 5 MB
+
 export default function PerfilPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -26,6 +28,11 @@ export default function PerfilPage() {
   const [activeSection, setActiveSection] = useState<Section>('dados')
   const [userId, setUserId] = useState('')
   const [profileUrl, setProfileUrl] = useState('')
+
+  // Avatar state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
 
   // TMB state
   const [tmbForm, setTmbForm] = useState({
@@ -58,6 +65,7 @@ export default function PerfilPage() {
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) {
       setProfile(data)
+      if (data.avatar_url) setAvatarUrl(data.avatar_url)
       setForm({
         name: data.name, calorie_goal: data.calorie_goal,
         protein_goal: data.protein_goal, carbs_goal: data.carbs_goal, fat_goal: data.fat_goal,
@@ -115,6 +123,34 @@ export default function PerfilPage() {
         tmb_activity: tmbForm.activity,
       }).eq('id', user.id)
     }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_AVATAR_BYTES) {
+      setAvatarError('A imagem deve ter no máximo 5 MB.')
+      return
+    }
+    setAvatarError('')
+    setAvatarLoading(true)
+    const ext = file.name.split('.').pop()
+    const path = `${userId}/${Date.now()}.${ext}`
+    const { data: upload, error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    if (error || !upload) {
+      setAvatarError('Falha ao enviar imagem. Tente novamente.')
+      setAvatarLoading(false)
+      return
+    }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(upload.path)
+    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId)
+    setAvatarUrl(publicUrl)
+    setAvatarLoading(false)
+  }
+
+  async function handleRemoveAvatar() {
+    await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId)
+    setAvatarUrl(null)
   }
 
   function applyTmbToGoal() {
@@ -239,6 +275,50 @@ export default function PerfilPage() {
         {/* ── Dados pessoais ── */}
         {activeSection === 'dados' && (
           <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Foto de perfil"
+                    className="w-24 h-24 rounded-full object-cover ring-2 ring-emerald-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center text-4xl">
+                    👤
+                  </div>
+                )}
+                {avatarLoading && (
+                  <div className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center">
+                    <span className="text-white text-xs">...</span>
+                  </div>
+                )}
+              </div>
+              {avatarError && <p className="text-xs text-red-500">{avatarError}</p>}
+              <div className="flex gap-2">
+                <label className="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                  {avatarUrl ? 'Trocar foto' : 'Adicionar foto'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={avatarLoading}
+                  />
+                </label>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 border border-red-200 rounded-lg"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+            </div>
+
             {email && (
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">E-mail</p>
