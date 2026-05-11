@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navigation from '@/components/Navigation'
 import FoodSearchModal from '@/components/FoodSearchModal'
+import MarmitaSuggester from '@/components/MarmitaSuggester'
 import { Food, Marmita, MarmitaItem, calcNutrients, sumMarmita } from '@/types'
 import { format } from 'date-fns'
 
@@ -265,6 +266,8 @@ export default function MarmitasPage() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
+        <MarmitaSuggester foods={foods} userId={userId} onCreated={loadData} />
+
         {marmitas.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
             <div className="text-5xl mb-3">🍱</div>
