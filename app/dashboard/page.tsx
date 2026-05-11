@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [totals, setTotals] = useState<DayTotals>({ calories: 0, protein: 0, carbs: 0, fat: 0 })
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
+  const [pendingFriends, setPendingFriends] = useState(0)
 
   const supabase = createClient()
 
@@ -46,6 +47,14 @@ export default function DashboardPage() {
       setProfile(prof)
       setUserName(prof.name)
     }
+
+    // Solicitações de amizade pendentes recebidas
+    const { count: pendingCount } = await supabase
+      .from('friendships')
+      .select('*', { count: 'exact', head: true })
+      .eq('target_id', user.id)
+      .eq('status', 'pending')
+    setPendingFriends(pendingCount || 0)
 
     const { data: mealLogs } = await supabase
       .from('meal_logs')
@@ -96,7 +105,15 @@ export default function DashboardPage() {
             <h1 className="text-lg font-bold text-gray-800">🥗 FitRF</h1>
             {userName && <p className="text-xs text-gray-400">Olá, {userName}!</p>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <Link href="/amigos" className="relative text-xs text-gray-500 hover:text-emerald-600 px-2 py-1">
+              👥 Amigos
+              {pendingFriends > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {pendingFriends}
+                </span>
+              )}
+            </Link>
             <Link href="/perfil" className="text-xs text-gray-500 hover:text-emerald-600 px-2 py-1">
               ⚙️ Perfil
             </Link>
