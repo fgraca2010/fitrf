@@ -62,6 +62,15 @@ export default function PerfilPage() {
         name: data.name, calorie_goal: data.calorie_goal,
         protein_goal: data.protein_goal, carbs_goal: data.carbs_goal, fat_goal: data.fat_goal,
       })
+      if (data.tmb_weight_kg || data.tmb_height_cm || data.tmb_age_years) {
+        setTmbForm({
+          weight_kg: data.tmb_weight_kg?.toString() ?? '',
+          height_cm: data.tmb_height_cm?.toString() ?? '',
+          age_years: data.tmb_age_years?.toString() ?? '',
+          sex: (data.tmb_sex as Sex) || 'masculino',
+          activity: (data.tmb_activity as ActivityLevel) || 'moderado',
+        })
+      }
     }
   }, [router])
 
@@ -89,12 +98,23 @@ export default function PerfilPage() {
     loadProfile()
   }
 
-  function calcTmbNow() {
+  async function calcTmbNow() {
     const w = Number(tmbForm.weight_kg)
     const h = Number(tmbForm.height_cm)
     const a = Number(tmbForm.age_years)
     if (!w || !h || !a) return
     setTmbResult(calcTmb({ weight_kg: w, height_cm: h, age_years: a, sex: tmbForm.sex, activity: tmbForm.activity }))
+    // Persiste os valores para pré-preencher na próxima vez
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').update({
+        tmb_weight_kg: w,
+        tmb_height_cm: h,
+        tmb_age_years: a,
+        tmb_sex: tmbForm.sex,
+        tmb_activity: tmbForm.activity,
+      }).eq('id', user.id)
+    }
   }
 
   function applyTmbToGoal() {
