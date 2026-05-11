@@ -163,10 +163,9 @@ export default function PerfilPage() {
     }
 
     setDeleteLoading(true)
-    const res = await fetch('/api/delete-account', { method: 'DELETE' })
-    if (!res.ok) {
-      const data = await res.json()
-      setDeleteError(data.error || 'Erro ao excluir conta.')
+    const { error } = await supabase.rpc('delete_own_account')
+    if (error) {
+      setDeleteError('Erro ao excluir conta. Tente novamente.')
       setDeleteLoading(false)
       return
     }

@@ -108,3 +108,20 @@ create policy "marmita_items_friends_read" on marmita_items for select
       where m.id = marmita_id and are_friends(auth.uid(), m.user_id)
     )
   );
+
+-- ============================
+-- Exclusão de conta pelo próprio usuário (sem service_role_key)
+-- SECURITY DEFINER = roda com privilégios elevados, mas auth.uid()
+-- garante que só o próprio usuário pode deletar a si mesmo.
+-- O CASCADE em auth.users cuida de limpar profiles e demais dados.
+-- ============================
+create or replace function delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
